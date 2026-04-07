@@ -1,29 +1,12 @@
-    
 -- 加载通知
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "HN 脚本",
     Text = "正在加载中...",
     Duration = 2
 })
+wait(2)
 
--- 修复：必须先加载 WindUI 库（手机通用远程库）
-local WindUI;
-task.spawn(function()
-    local success, err = pcall(function()
-        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Roblox-Thot/WindUI/main/source.lua"))()
-    end)
-    if not success then
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "错误",
-            Text = "WindUI 加载失败",
-            Duration = 3
-        })
-        return
-    end
-end)
-
-task.wait(2)
-if not WindUI then return end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 WindUI:AddTheme({
     Name = "My Theme",
@@ -37,7 +20,7 @@ WindUI:AddTheme({
 })
 
 local Window = WindUI:CreateWindow({
-    Title = "泰坦钓鱼 NH",
+    Title = "泰坦钓鱼  NH    ",
     Folder = "MySuperHub",
     SideBarWidth = 180,
     Background = "https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/preview-imagetourl.cloud-1774366396488-01xfxi.jpg",
@@ -62,7 +45,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({ Title = "V1.03", Color = Color3.fromHex("00CED1"), Radius = 2 })
-Window:Tag({ Title = "梅西", Icon = "crown", Color = Color3.fromHex("FFD700"), Radius = 2 })
+Window:Tag({ Title = "NH ", Icon = "crown", Color = Color3.fromHex("FFD700"), Radius = 2 })
 Window:Tag({ Title = "Qcq", Icon = "square-chevron-right", Color = Color3.fromHex("#30ff6a"), Radius = 2 })
 Window:Tag({ Title = "XI", Icon = "square-chevron-right", Color = Color3.fromHex("#30ff6a"), Radius = 2 })
 
@@ -90,37 +73,44 @@ local animationSpeed = 5
 
 local function createRainbowBorder(window, colorScheme)
     local mainFrame = window.UIElements.Main
-    if not mainFrame then return end
+    if not mainFrame then return nil end
+
     local existingStroke = mainFrame:FindFirstChild("RainbowStroke")
     if existingStroke then existingStroke:Destroy() end
+
     if not mainFrame:FindFirstChildOfClass("UICorner") then
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 16)
         corner.Parent = mainFrame
     end
+
     local rainbowStroke = Instance.new("UIStroke")
     rainbowStroke.Name = "RainbowStroke"
     rainbowStroke.Thickness = 2
-    rainbowStroke.Color = Color3.new(1,1,1)
+    rainbowStroke.Color = Color3.new(1, 1, 1)
     rainbowStroke.Parent = mainFrame
+
     local glowEffect = Instance.new("UIGradient")
     glowEffect.Name = "GlowEffect"
-    local scheme = COLOR_SCHEMES[colorScheme or "彩虹颜色"]
-    glowEffect.Color = scheme and scheme[1] or COLOR_SCHEMES["彩虹颜色"][1]
+    local schemeData = COLOR_SCHEMES[colorScheme or "彩虹颜色"]
+    glowEffect.Color = schemeData and schemeData[1] or COLOR_SCHEMES["彩虹颜色"][1]
     glowEffect.Rotation = 0
     glowEffect.Parent = rainbowStroke
+
     return rainbowStroke
 end
 
 local function startBorderAnimation(window, speed)
     local mainFrame = window.UIElements.Main
-    if not mainFrame then return end
-    local rs = mainFrame:FindFirstChild("RainbowStroke")
-    local ge = rs and rs:FindFirstChild("GlowEffect")
-    if not ge then return end
+    if not mainFrame then return nil end
+    local rainbowStroke = mainFrame:FindFirstChild("RainbowStroke")
+    if not rainbowStroke then return nil end
+    local glowEffect = rainbowStroke:FindFirstChild("GlowEffect")
+    if not glowEffect then return nil end
+
     return game:GetService("RunService").Heartbeat:Connect(function()
-        if not rs or not rs.Parent then return end
-        ge.Rotation = (tick() * speed * 10) % 360
+        if not rainbowStroke or rainbowStroke.Parent == nil then return end
+        glowEffect.Rotation = (tick() * speed * 10) % 360
     end)
 end
 
@@ -132,6 +122,7 @@ end
 -- ======== 背景模糊 ========
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+
 local blur = Lighting:FindFirstChildOfClass("BlurEffect")
 if not blur then
     blur = Instance.new("BlurEffect")
@@ -141,9 +132,11 @@ end
 
 task.spawn(function()
     local wasOpen = false
-    while task.wait(0.1) do
+    while true do
+        task.wait(0.1)
         local mainFrame = Window.UIElements and Window.UIElements.Main
         local isOpen = mainFrame and mainFrame.Visible or false
+
         if isOpen ~= wasOpen then
             wasOpen = isOpen
             TweenService:Create(blur, TweenInfo.new(0.3), { Size = isOpen and 20 or 0 }):Play()
@@ -151,12 +144,8 @@ task.spawn(function()
     end
 end)
 
--- ======== 功能主体 ========
-local Players = game:GetService("Players")
-local lplr = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-
-local Tab = Window:Tab({ Title = "自动农场", Icon = "sparkles" })
+-- ======== 功能 ========
+local Tab = Window:Tab({ Title = "自动农场", Icon = "sparkles", Locked = false })
 
 local AutoFarm = false
 local Toggle = Tab:Toggle({
@@ -166,7 +155,7 @@ local Toggle = Tab:Toggle({
     Value = false,
     Callback = function(state)
         AutoFarm = state
-        if state then
+        if AutoFarm then
             task.spawn(function()
                 local rg
                 for _,v in next,getgc(true) do
@@ -197,9 +186,10 @@ local AutoAttack = false
 local Toggle = Tab:Toggle({
     Title = "自动拉杆",
     Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         AutoAttack = state
-        if state then
+        if AutoAttack then
             task.spawn(function()
                 local rg
                 for _,v in next,getgc(true) do
@@ -228,29 +218,31 @@ local AutoSkill = false
 local Toggle = Tab:Toggle({
     Title = "自动技能",
     Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         AutoSkill = state
-        if state then
+        if AutoSkill then
             task.spawn(function()
                 local rg
-                for _,v in next,getgc(true) do
-                    if type(v)=="table" then
+                for _,v in next, getgc(true) do
+                    if type(v) == "table" then
                         pcall(function()
-                            local n=0
-                            for _,k in next,{"RodController","SkillClient","Inventory","SellClient"} do
-                                if rawget(v,k) then n=n+1 end
+                            local n = 0
+                            for _,k in next, {"RodController","SkillClient","Inventory","SellClient"} do
+                                if rawget(v,k) then n = n + 1 end
                             end
-                            if n>=3 then rg=v end
+                            if n >= 3 then rg = v end
                         end)
                     end
                 end
                 if not rg then return end
-                local nt=rg.SkillClient.Shared.Network
+                local nt = rg.SkillClient.Shared.Network
+                local lplr = game:GetService("Players").LocalPlayer
                 while AutoSkill do
                     pcall(function()
                         local fullText = lplr.PlayerGui.RodGUI.Main.Mastery.NameRod.Text
                         local rodName = string.gsub(fullText, "%s*%(.-%)", "")
-                        for i=1,4 do
+                        for i = 1, 4 do
                             pcall(nt.FireServer, nt, "CastSkill", rodName, tostring(i))
                         end
                     end)
@@ -261,7 +253,10 @@ local Toggle = Tab:Toggle({
     end
 })
 
--- 自动卖鱼
+local Players = game:GetService("Players")
+local lplr = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
 local sellThreshold = 5
 local autoSellEnabled = false
 local AutoTPBoss = false
@@ -271,32 +266,137 @@ local bossActive = false
 local originalLocation, fishOriginalLocation
 
 local sellPoints = {
-    Vector3.new(1753.585,24.244,-396.542),
-    Vector3.new(1139.210,70.405,1475.695),
-    Vector3.new(-846.960,27.661,-225.477),
-    Vector3.new(-538.225,28.218,1161.663),
-    Vector3.new(493.731,33.121,-1135.015),
-    Vector3.new(-516.820,62.408,-1261.703),
-    Vector3.new(171.134,22.707,74.273)
+    Vector3.new(1753.58508, 24.244154, -396.541931),
+    Vector3.new(1139.21008, 70.4045868, 1475.69507),
+    Vector3.new(-846.960144, 27.6607056, -225.477127),
+    Vector3.new(-538.224976, 28.2181206, 1161.66272),
+    Vector3.new(493.731262, 33.1211739, -1135.01453),
+    Vector3.new(-516.820435, 62.4082184, -1261.70251),
+    Vector3.new(171.133942, 22.7074032, 74.2732925)
 }
 
 local function findBossZone()
-    local f = workspace:FindFirstChild("BossZones")
-    if not f then return nil end
-    for _,v in ipairs(f:GetChildren()) do
-        local z = v:FindFirstChild("BossSpawnZone")
-        if z then return z end
+    local bossZonesFolder = workspace:FindFirstChild("BossZones")
+    if not bossZonesFolder then return nil end
+    for _, folder in ipairs(bossZonesFolder:GetChildren()) do
+        local zone = folder:FindFirstChild("BossSpawnZone")
+        if zone then return zone end
     end
     return nil
 end
 
 local function getClosestSellPoint(pos)
     local best, dist = nil, math.huge
-    for _,p in ipairs(sellPoints) do
-        local d = (pos-p).Magnitude
-        if d < dist then best, dist = p, d end
+    for _, p in ipairs(sellPoints) do
+        local d = (pos - p).Magnitude
+        if d < dist then
+            best = p
+            dist = d
+        end
     end
     return best
 end
 
-local funct
+local function getInvCount()
+    local c = 0
+    local bp = lplr.Backpack
+    local char = lplr.Character
+    if bp then c = c + #bp:GetChildren() end
+    if char then for _,v in ipairs(char:GetChildren()) do if v:IsA("Tool") then c = c + 1 end end end
+    return c
+end
+
+local function smoothTP(cf, sp)
+    local char = lplr.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    sp = sp or 160
+    local dist = (hrp.Position - cf.Position).Magnitude
+    local t = TweenService:Create(hrp, TweenInfo.new(dist/sp), {CFrame = cf})
+    local con = RunService.Stepped:Connect(function()
+        for _,v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end)
+    t:Play()
+    t.Completed:Wait()
+    con:Disconnect()
+end
+
+local Slider = Tab:Slider({
+    Title = "背包数量阈值",
+    Step = 1,
+    Value = { Min = 1, Max = 60, Default = 5 },
+    Callback = function(v) sellThreshold = v end
+})
+
+local ToggleSell = Tab:Toggle({
+    Title = "自动卖鱼",
+    Desc = "满了自动卖",
+    Type = "Checkbox",
+    Callback = function(state)
+        autoSellEnabled = state
+        if state then
+            task.spawn(function()
+                while autoSellEnabled do
+                    task.wait(1)
+                    if not isTeleporting and not isBossTeleporting and not bossActive then
+                        if getInvCount() >= sellThreshold then
+                            local hrp = lplr.Character and lplr.Character.HumanoidRootPart
+                            if hrp then
+                                fishOriginalLocation = hrp.CFrame
+                                local p = getClosestSellPoint(hrp.Position)
+                                if p then
+                                    isTeleporting = true
+                                    smoothTP(CFrame.new(p))
+                                    repeat task.wait(0.5) until getInvCount() < 2 or not autoSellEnabled
+                                    smoothTP(fishOriginalLocation)
+                                    isTeleporting = false
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+local ToggleBoss = Tab:Toggle({
+    Title = "自动BOSS传送",
+    Type = "Checkbox",
+    Callback = function(state)
+        AutoTPBoss = state
+        if state then
+            task.spawn(function()
+                while AutoTPBoss do
+                    task.wait(0.5)
+                    local z = findBossZone()
+                    if z and not bossActive then
+                        bossActive = true
+                        local hrp = lplr.Character and lplr.Character.HumanoidRootPart
+                        if hrp then
+                            originalLocation = hrp.CFrame
+                            isBossTeleporting = true
+                            smoothTP(z:IsA("Model") and z:GetModelCFrame() or z.CFrame, 200)
+                            isBossTeleporting = false
+                        end
+                    elseif not z and bossActive then
+                        bossActive = false
+                        if originalLocation then
+                            smoothTP(originalLocation)
+                            originalLocation = nil
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- 加载完成提示
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "HN 脚本",
+    Text = "加载成功 ✅",
+    Duration = 2
+})
